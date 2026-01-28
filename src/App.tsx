@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { challenges } from './data/challenges';
-import type { EternityChallenge, DimensionSplit, PaceSplit } from './data/challenges';
+import type { EternityChallenge, ECCompletion, DimensionSplit, PaceSplit } from './data/challenges';
 
 const dimensionColors: Record<DimensionSplit, { bg: string; text: string }> = {
   antimatter: { bg: 'bg-green-500', text: 'text-green-400' },
@@ -45,7 +46,57 @@ function CompletionDots({
   );
 }
 
-function ECRow({ ec }: { ec: EternityChallenge }) {
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+    >
+      {copied ? 'Copied!' : label}
+    </button>
+  );
+}
+
+function CompletionRow({ completion }: { completion: ECCompletion }) {
+  const hasNote = completion.notes && completion.notes !== '-';
+  const tsString = completion.timeStudies.join(',');
+
+  return (
+    <div className="grid grid-cols-[40px_1fr_80px_auto] items-center gap-4 py-2 px-3 bg-gray-800/50 rounded">
+      <span className="text-sm text-gray-400">x{completion.level}</span>
+      <div className="text-sm">
+        {hasNote ? (
+          <span className="text-gray-300">{completion.notes}</span>
+        ) : (
+          <span className="text-gray-600">—</span>
+        )}
+      </div>
+      <div className="text-sm text-right">
+        {completion.tt ? (
+          <span className="text-amber-400">{completion.tt} TT</span>
+        ) : (
+          <span className="text-gray-600">—</span>
+        )}
+      </div>
+      <CopyButton text={tsString} label="Copy TS" />
+    </div>
+  );
+}
+
+function ECRow({ ec, isExpanded, onToggle }: {
+  ec: EternityChallenge;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   const dimSplits = ec.completions.map(c => c.dimensionSplit);
   const paceSplits = ec.completions.map(c => c.paceSplit);
 
@@ -56,43 +107,75 @@ function ECRow({ ec }: { ec: EternityChallenge }) {
   const hasPaceVariation = paceUnique.length > 1;
 
   return (
-    <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-4 py-3 px-4 bg-gray-800/50 rounded-lg">
-      {/* EC Number */}
-      <div className="text-xl font-bold text-white">
-        EC{ec.id}
+    <div className="rounded-lg overflow-hidden">
+      {/* Main row - clickable */}
+      <div
+        onClick={onToggle}
+        className={`grid grid-cols-[80px_1fr_1fr_24px] items-center gap-4 py-3 px-4 cursor-pointer transition-colors ${
+          isExpanded ? 'bg-gray-800' : 'bg-gray-800/50 hover:bg-gray-800/70'
+        }`}
+      >
+        {/* EC Number */}
+        <div className="text-xl font-bold text-white">
+          EC{ec.id}
+        </div>
+
+        {/* Dimension Split */}
+        <div className="flex items-center gap-3">
+          {hasDimVariation ? (
+            <>
+              <CompletionDots values={dimSplits} colorMap={dimensionColors} />
+              <span className="text-sm text-gray-400">
+                {dimUnique.map(d => dimensionLabels[d]).join(' → ')}
+              </span>
+            </>
+          ) : (
+            <span className={`text-sm font-medium ${dimensionColors[dimSplits[0]].text}`}>
+              {dimensionLabels[dimSplits[0]]}
+            </span>
+          )}
+        </div>
+
+        {/* Pace Split */}
+        <div className="flex items-center gap-3">
+          {hasPaceVariation ? (
+            <>
+              <CompletionDots values={paceSplits} colorMap={paceColors} />
+              <span className="text-sm text-gray-400">
+                {paceUnique.map(p => paceLabels[p]).join(' → ')}
+              </span>
+            </>
+          ) : (
+            <span className={`text-sm font-medium ${paceColors[paceSplits[0]].text}`}>
+              {paceLabels[paceSplits[0]]}
+            </span>
+          )}
+        </div>
+
+        {/* Chevron */}
+        <div className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4.293 5.293a1 1 0 011.414 0L8 7.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+          </svg>
+        </div>
       </div>
 
-      {/* Dimension Split */}
-      <div className="flex items-center gap-3">
-        {hasDimVariation ? (
-          <>
-            <CompletionDots values={dimSplits} colorMap={dimensionColors} />
-            <span className="text-sm text-gray-400">
-              {dimUnique.map(d => dimensionLabels[d]).join(' → ')}
-            </span>
-          </>
-        ) : (
-          <span className={`text-sm font-medium ${dimensionColors[dimSplits[0]].text}`}>
-            {dimensionLabels[dimSplits[0]]}
-          </span>
-        )}
-      </div>
-
-      {/* Pace Split */}
-      <div className="flex items-center gap-3">
-        {hasPaceVariation ? (
-          <>
-            <CompletionDots values={paceSplits} colorMap={paceColors} />
-            <span className="text-sm text-gray-400">
-              {paceUnique.map(p => paceLabels[p]).join(' → ')}
-            </span>
-          </>
-        ) : (
-          <span className={`text-sm font-medium ${paceColors[paceSplits[0]].text}`}>
-            {paceLabels[paceSplits[0]]}
-          </span>
-        )}
-      </div>
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="bg-gray-900 border-t border-gray-700 px-4 py-3">
+          <div className="grid grid-cols-[40px_1fr_80px_auto] gap-4 px-3 mb-2 text-xs text-gray-500 uppercase tracking-wide">
+            <div>Level</div>
+            <div>Notes</div>
+            <div className="text-right">TT Req</div>
+            <div></div>
+          </div>
+          <div className="space-y-1">
+            {ec.completions.map((completion) => (
+              <CompletionRow key={completion.level} completion={completion} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -139,6 +222,12 @@ function Legend() {
 }
 
 function App() {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const handleToggle = (id: number) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -154,22 +243,28 @@ function App() {
         </div>
 
         {/* Table Header */}
-        <div className="grid grid-cols-[80px_1fr_1fr] gap-4 px-4 mb-2 text-xs text-gray-500 uppercase tracking-wide">
+        <div className="grid grid-cols-[80px_1fr_1fr_24px] gap-4 px-4 mb-2 text-xs text-gray-500 uppercase tracking-wide">
           <div>Challenge</div>
           <div>Dimension (71-103)</div>
           <div>Pace (121-141)</div>
+          <div></div>
         </div>
 
         {/* Challenge List */}
         <div className="space-y-2">
           {challenges.map((ec) => (
-            <ECRow key={ec.id} ec={ec} />
+            <ECRow
+              key={ec.id}
+              ec={ec}
+              isExpanded={expandedId === ec.id}
+              onToggle={() => handleToggle(ec.id)}
+            />
           ))}
         </div>
 
         {/* Footer hint */}
         <p className="mt-6 text-xs text-gray-600 text-center">
-          Dots show x1→x5 completion splits when they vary
+          Click a challenge to see details • Dots show x1→x5 splits when they vary
         </p>
       </div>
     </div>
