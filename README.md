@@ -27,3 +27,16 @@ Choose one path:
 ## Data Source
 
 Strategy data from the Antimatter Dimensions community spreadsheet (Picturemap v2.6).
+
+## Development
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## Build
+
+```bash
+pnpm build
+```
