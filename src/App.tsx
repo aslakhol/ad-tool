@@ -1,106 +1,138 @@
 import { challenges } from './data/challenges';
 import type { EternityChallenge, DimensionSplit, PaceSplit } from './data/challenges';
 
-const dimensionSplitColors: Record<DimensionSplit, string> = {
-  antimatter: 'bg-green-600',
-  infinity: 'bg-orange-500',
-  time: 'bg-purple-600',
+const dimensionColors: Record<DimensionSplit, { bg: string; text: string }> = {
+  antimatter: { bg: 'bg-green-500', text: 'text-green-400' },
+  infinity: { bg: 'bg-orange-500', text: 'text-orange-400' },
+  time: { bg: 'bg-purple-500', text: 'text-purple-400' },
 };
 
-const dimensionSplitLabels: Record<DimensionSplit, string> = {
-  antimatter: 'AM',
-  infinity: 'Inf',
+const dimensionLabels: Record<DimensionSplit, string> = {
+  antimatter: 'Antimatter',
+  infinity: 'Infinity',
   time: 'Time',
 };
 
-const paceSplitColors: Record<PaceSplit, string> = {
-  active: 'bg-red-600',
-  passive: 'bg-purple-500',
-  idle: 'bg-blue-600',
+const paceColors: Record<PaceSplit, { bg: string; text: string }> = {
+  active: { bg: 'bg-red-500', text: 'text-red-400' },
+  passive: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-400' },
+  idle: { bg: 'bg-sky-500', text: 'text-sky-400' },
 };
 
-const paceSplitLabels: Record<PaceSplit, string> = {
+const paceLabels: Record<PaceSplit, string> = {
   active: 'Active',
   passive: 'Passive',
   idle: 'Idle',
 };
 
-function SplitBadge({
-  value,
-  colors,
-  labels
+function CompletionDots({
+  values,
+  colorMap
 }: {
-  value: DimensionSplit | PaceSplit;
-  colors: Record<string, string>;
-  labels: Record<string, string>;
+  values: (DimensionSplit | PaceSplit)[];
+  colorMap: Record<string, { bg: string }>;
 }) {
   return (
-    <span className={`${colors[value]} text-white text-xs font-bold px-2 py-1 rounded`}>
-      {labels[value]}
-    </span>
+    <div className="flex gap-1">
+      {values.map((value, i) => (
+        <div
+          key={i}
+          className={`w-2 h-2 rounded-full ${colorMap[value].bg}`}
+          title={`x${i + 1}`}
+        />
+      ))}
+    </div>
   );
 }
 
-function hasSplitVariation(ec: EternityChallenge, splitType: 'dimension' | 'pace'): boolean {
-  if (ec.completions.length <= 1) return false;
-  const first = splitType === 'dimension'
-    ? ec.completions[0].dimensionSplit
-    : ec.completions[0].paceSplit;
-  return ec.completions.some(c =>
-    (splitType === 'dimension' ? c.dimensionSplit : c.paceSplit) !== first
+function ECRow({ ec }: { ec: EternityChallenge }) {
+  const dimSplits = ec.completions.map(c => c.dimensionSplit);
+  const paceSplits = ec.completions.map(c => c.paceSplit);
+
+  const dimUnique = [...new Set(dimSplits)];
+  const paceUnique = [...new Set(paceSplits)];
+
+  const hasDimVariation = dimUnique.length > 1;
+  const hasPaceVariation = paceUnique.length > 1;
+
+  return (
+    <div className="grid grid-cols-[80px_1fr_1fr] items-center gap-4 py-3 px-4 bg-gray-800/50 rounded-lg">
+      {/* EC Number */}
+      <div className="text-xl font-bold text-white">
+        EC{ec.id}
+      </div>
+
+      {/* Dimension Split */}
+      <div className="flex items-center gap-3">
+        {hasDimVariation ? (
+          <>
+            <CompletionDots values={dimSplits} colorMap={dimensionColors} />
+            <span className="text-sm text-gray-400">
+              {dimUnique.map(d => dimensionLabels[d]).join(' → ')}
+            </span>
+          </>
+        ) : (
+          <span className={`text-sm font-medium ${dimensionColors[dimSplits[0]].text}`}>
+            {dimensionLabels[dimSplits[0]]}
+          </span>
+        )}
+      </div>
+
+      {/* Pace Split */}
+      <div className="flex items-center gap-3">
+        {hasPaceVariation ? (
+          <>
+            <CompletionDots values={paceSplits} colorMap={paceColors} />
+            <span className="text-sm text-gray-400">
+              {paceUnique.map(p => paceLabels[p]).join(' → ')}
+            </span>
+          </>
+        ) : (
+          <span className={`text-sm font-medium ${paceColors[paceSplits[0]].text}`}>
+            {paceLabels[paceSplits[0]]}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
-function ECCard({ ec }: { ec: EternityChallenge }) {
-  const hasDimVariation = hasSplitVariation(ec, 'dimension');
-  const hasPaceVariation = hasSplitVariation(ec, 'pace');
-
-  // If no variation, show compact view
-  if (!hasDimVariation && !hasPaceVariation) {
-    const first = ec.completions[0];
-    return (
-      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">EC{ec.id}</h3>
-          <div className="flex gap-2">
-            <SplitBadge
-                            value={first.dimensionSplit}
-              colors={dimensionSplitColors}
-              labels={dimensionSplitLabels}
-            />
-            <SplitBadge
-                            value={first.paceSplit}
-              colors={paceSplitColors}
-              labels={paceSplitLabels}
-            />
-          </div>
+function Legend() {
+  return (
+    <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+      <div className="flex items-center gap-4">
+        <span className="text-gray-500 uppercase text-xs tracking-wide">Dimension</span>
+        <div className="flex gap-3">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+            <span className="text-gray-300">Antimatter</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            <span className="text-gray-300">Infinity</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+            <span className="text-gray-300">Time</span>
+          </span>
         </div>
       </div>
-    );
-  }
-
-  // Show expanded view with per-completion splits
-  return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <h3 className="text-lg font-bold text-white mb-3">EC{ec.id}</h3>
-      <div className="space-y-2">
-        {ec.completions.map((completion) => (
-          <div key={completion.level} className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">x{completion.level}</span>
-            <div className="flex gap-2">
-              <SplitBadge
-                                value={completion.dimensionSplit}
-                colors={dimensionSplitColors}
-                labels={dimensionSplitLabels}
-              />
-              <SplitBadge
-                                value={completion.paceSplit}
-                colors={paceSplitColors}
-                labels={paceSplitLabels}
-              />
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center gap-4">
+        <span className="text-gray-500 uppercase text-xs tracking-wide">Pace</span>
+        <div className="flex gap-3">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span className="text-gray-300">Active</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
+            <span className="text-gray-300">Passive</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+            <span className="text-gray-300">Idle</span>
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -108,39 +140,37 @@ function ECCard({ ec }: { ec: EternityChallenge }) {
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-2">AD Tool</h1>
-        <p className="text-gray-400 mb-6">Eternity Challenge Split Reference</p>
+    <div className="min-h-screen bg-gray-950 text-gray-100">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-1">AD Tool</h1>
+          <p className="text-gray-500">Eternity Challenge Split Reference</p>
+        </header>
 
         {/* Legend */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-          <div className="flex flex-wrap gap-6">
-            <div>
-              <span className="text-gray-400 text-sm block mb-2">Dimension Split (71-103)</span>
-              <div className="flex gap-2">
-                <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">AM</span>
-                <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">Inf</span>
-                <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded">Time</span>
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-400 text-sm block mb-2">Pace Split (121-141)</span>
-              <div className="flex gap-2">
-                <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">Active</span>
-                <span className="bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded">Passive</span>
-                <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">Idle</span>
-              </div>
-            </div>
-          </div>
+        <div className="mb-6 pb-6 border-b border-gray-800">
+          <Legend />
         </div>
 
-        {/* Challenge Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Table Header */}
+        <div className="grid grid-cols-[80px_1fr_1fr] gap-4 px-4 mb-2 text-xs text-gray-500 uppercase tracking-wide">
+          <div>Challenge</div>
+          <div>Dimension (71-103)</div>
+          <div>Pace (121-141)</div>
+        </div>
+
+        {/* Challenge List */}
+        <div className="space-y-2">
           {challenges.map((ec) => (
-            <ECCard key={ec.id} ec={ec} />
+            <ECRow key={ec.id} ec={ec} />
           ))}
         </div>
+
+        {/* Footer hint */}
+        <p className="mt-6 text-xs text-gray-600 text-center">
+          Dots show x1→x5 completion splits when they vary
+        </p>
       </div>
     </div>
   );
