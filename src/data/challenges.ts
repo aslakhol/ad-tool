@@ -109,14 +109,20 @@ function parseECName(ec: string): { id: number; level: number } {
 export function getChallenges(): EternityChallenge[] {
   const challengeMap = new Map<number, ECCompletion[]>();
 
+  // Process in spreadsheet order to handle "ditto" marks (empty tt means same as above)
+  let lastTT = '';
   for (const raw of rawData) {
     const { id, level } = parseECName(raw.ec);
+
+    // If tt is empty, use the previous row's value (ditto mark in spreadsheet)
+    const tt = raw.tt || lastTT;
+    lastTT = tt;
 
     const completion: ECCompletion = {
       level,
       notes: raw.notes,
       ipReq: raw.ipReq,
-      tt: raw.tt,
+      tt,
       dimensionSplit: detectDimensionSplit(raw.studies),
       paceSplit: detectPaceSplit(raw.studies),
       timeStudies: raw.studies,
