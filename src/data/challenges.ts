@@ -115,8 +115,8 @@ export function getChallenges(): EternityChallenge[] {
   for (const raw of rawData) {
     const { id, level } = parseECName(raw.ec);
 
-    // If tt is empty, use the previous row's value (ditto mark in spreadsheet)
-    const tt = raw.tt || lastTT;
+    // If tt is empty or a ditto mark ("), use the previous row's value
+    const tt = (raw.tt === '' || raw.tt === '"') ? lastTT : raw.tt;
     lastTT = tt;
 
     const completion: ECCompletion = {
