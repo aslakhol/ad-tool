@@ -71,16 +71,16 @@ function CompletionRow({ completion }: { completion: ECCompletion }) {
   const tsString = completion.timeStudies.join(',');
 
   return (
-    <div className="grid grid-cols-[40px_1fr_80px_auto] items-center gap-4 py-2 px-3 bg-gray-800/50 rounded">
-      <span className="text-sm text-gray-400">x{completion.level}</span>
-      <div className="text-sm">
+    <div className="flex items-center gap-3 py-2 px-3 bg-gray-800/50 rounded">
+      <span className="text-sm text-gray-400 w-8 shrink-0">x{completion.level}</span>
+      <div className="text-sm flex-1 min-w-0">
         {hasNote ? (
           <span className="text-gray-300">{completion.notes}</span>
         ) : (
           <span className="text-gray-600">—</span>
         )}
       </div>
-      <div className="text-sm text-right">
+      <div className="text-sm shrink-0">
         {completion.tt ? (
           <span className="text-amber-400">{completion.tt} TT</span>
         ) : (
@@ -111,49 +111,52 @@ function ECRow({ ec, isExpanded, onToggle }: {
       {/* Main row - clickable */}
       <div
         onClick={onToggle}
-        className={`grid grid-cols-[80px_1fr_1fr_24px] items-center gap-4 py-3 px-4 cursor-pointer transition-colors ${
+        className={`flex items-center gap-3 py-3 px-4 cursor-pointer transition-colors ${
           isExpanded ? 'bg-gray-800' : 'bg-gray-800/50 hover:bg-gray-800/70'
         }`}
       >
         {/* EC Number */}
-        <div className="text-xl font-bold text-white">
+        <div className="text-xl font-bold text-white w-14 shrink-0">
           EC{ec.id}
         </div>
 
-        {/* Dimension Split */}
-        <div className="flex items-center gap-3">
-          {hasDimVariation ? (
-            <>
-              <CompletionDots values={dimSplits} colorMap={dimensionColors} />
-              <span className="text-sm text-gray-400">
-                {dimUnique.map(d => dimensionLabels[d]).join(' → ')}
+        {/* Splits container - stacks on mobile */}
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-6">
+          {/* Dimension Split */}
+          <div className="flex items-center gap-2 min-w-0">
+            {hasDimVariation ? (
+              <>
+                <CompletionDots values={dimSplits} colorMap={dimensionColors} />
+                <span className="text-sm text-gray-400 truncate">
+                  {dimUnique.map(d => dimensionLabels[d]).join(' → ')}
+                </span>
+              </>
+            ) : (
+              <span className={`text-sm font-medium ${dimensionColors[dimSplits[0]].text}`}>
+                {dimensionLabels[dimSplits[0]]}
               </span>
-            </>
-          ) : (
-            <span className={`text-sm font-medium ${dimensionColors[dimSplits[0]].text}`}>
-              {dimensionLabels[dimSplits[0]]}
-            </span>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Pace Split */}
-        <div className="flex items-center gap-3">
-          {hasPaceVariation ? (
-            <>
-              <CompletionDots values={paceSplits} colorMap={paceColors} />
-              <span className="text-sm text-gray-400">
-                {paceUnique.map(p => paceLabels[p]).join(' → ')}
+          {/* Pace Split */}
+          <div className="flex items-center gap-2 min-w-0">
+            {hasPaceVariation ? (
+              <>
+                <CompletionDots values={paceSplits} colorMap={paceColors} />
+                <span className="text-sm text-gray-400 truncate">
+                  {paceUnique.map(p => paceLabels[p]).join(' → ')}
+                </span>
+              </>
+            ) : (
+              <span className={`text-sm font-medium ${paceColors[paceSplits[0]].text}`}>
+                {paceLabels[paceSplits[0]]}
               </span>
-            </>
-          ) : (
-            <span className={`text-sm font-medium ${paceColors[paceSplits[0]].text}`}>
-              {paceLabels[paceSplits[0]]}
-            </span>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Chevron */}
-        <div className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+        <div className={`text-gray-500 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M4.293 5.293a1 1 0 011.414 0L8 7.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
           </svg>
@@ -163,11 +166,11 @@ function ECRow({ ec, isExpanded, onToggle }: {
       {/* Expanded content */}
       {isExpanded && (
         <div className="bg-gray-900 border-t border-gray-700 px-4 py-3">
-          <div className="grid grid-cols-[40px_1fr_80px_auto] gap-4 px-3 mb-2 text-xs text-gray-500 uppercase tracking-wide">
-            <div>Level</div>
-            <div>Notes</div>
-            <div className="text-right">TT Req</div>
-            <div></div>
+          <div className="hidden sm:flex gap-3 px-3 mb-2 text-xs text-gray-500 uppercase tracking-wide">
+            <div className="w-8">Level</div>
+            <div className="flex-1">Notes</div>
+            <div>TT Req</div>
+            <div className="w-16"></div>
           </div>
           <div className="space-y-1">
             {ec.completions.map((completion) => (
@@ -182,10 +185,10 @@ function ECRow({ ec, isExpanded, onToggle }: {
 
 function Legend() {
   return (
-    <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-x-8 gap-y-3 text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <span className="text-gray-500 uppercase text-xs tracking-wide">Dimension</span>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
             <span className="text-gray-300">Antimatter</span>
@@ -200,9 +203,9 @@ function Legend() {
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <span className="text-gray-500 uppercase text-xs tracking-wide">Pace</span>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
             <span className="text-gray-300">Active</span>
@@ -242,12 +245,14 @@ function App() {
           <Legend />
         </div>
 
-        {/* Table Header */}
-        <div className="grid grid-cols-[80px_1fr_1fr_24px] gap-4 px-4 mb-2 text-xs text-gray-500 uppercase tracking-wide">
-          <div>Challenge</div>
-          <div>Dimension (71-103)</div>
-          <div>Pace (121-141)</div>
-          <div></div>
+        {/* Table Header - hidden on mobile where layout stacks */}
+        <div className="hidden sm:flex gap-3 px-4 mb-2 text-xs text-gray-500 uppercase tracking-wide">
+          <div className="w-14 shrink-0">EC</div>
+          <div className="flex-1 flex gap-6">
+            <div>Dimension</div>
+            <div>Pace</div>
+          </div>
+          <div className="w-4"></div>
         </div>
 
         {/* Challenge List */}
