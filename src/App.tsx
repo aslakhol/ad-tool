@@ -26,6 +26,23 @@ const paceLabels: Record<PaceSplit, string> = {
   idle: 'Idle',
 };
 
+// Map TS numbers to their split colors
+const dimensionTS: Record<number, string> = {
+  71: 'text-green-400', 81: 'text-green-400', 91: 'text-green-400', 101: 'text-green-400',     // Antimatter
+  72: 'text-orange-400', 82: 'text-orange-400', 92: 'text-orange-400', 102: 'text-orange-400', // Infinity
+  73: 'text-purple-400', 83: 'text-purple-400', 93: 'text-purple-400', 103: 'text-purple-400', // Time
+};
+
+const paceTS: Record<number, string> = {
+  121: 'text-red-400', 131: 'text-red-400', 141: 'text-red-400',          // Active
+  122: 'text-fuchsia-400', 132: 'text-fuchsia-400', 142: 'text-fuchsia-400', // Passive
+  123: 'text-sky-400', 133: 'text-sky-400', 143: 'text-sky-400',          // Idle
+};
+
+function getTSColor(ts: number): string {
+  return dimensionTS[ts] || paceTS[ts] || 'text-gray-500';
+}
+
 function CompletionDots({
   values,
   colorMap
@@ -59,35 +76,46 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+      className="px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 transition-colors shrink-0"
     >
       {copied ? 'Copied!' : label}
     </button>
   );
 }
 
-function CompletionRow({ completion }: { completion: ECCompletion }) {
+function CompletionRow({ completion, showTS }: { completion: ECCompletion; showTS: boolean }) {
   const hasNote = completion.notes && completion.notes !== '-';
   const tsString = completion.timeStudies.join(',');
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 bg-gray-800/50 rounded">
-      <span className="text-sm text-gray-400 w-8 shrink-0">x{completion.level}</span>
-      <div className="text-sm flex-1 min-w-0">
-        {hasNote ? (
-          <span className="text-gray-300">{completion.notes}</span>
-        ) : (
-          <span className="text-gray-600">—</span>
-        )}
+    <div className="py-2 px-3 bg-gray-800/50 rounded">
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-400 w-8 shrink-0">x{completion.level}</span>
+        <div className="text-sm flex-1 min-w-0">
+          {hasNote ? (
+            <span className="text-gray-300">{completion.notes}</span>
+          ) : (
+            <span className="text-gray-600">—</span>
+          )}
+        </div>
+        <div className="text-sm shrink-0">
+          {completion.tt ? (
+            <span className="text-amber-400">{completion.tt} TT</span>
+          ) : (
+            <span className="text-gray-600">—</span>
+          )}
+        </div>
+        <CopyButton text={tsString} label="Copy TS" />
       </div>
-      <div className="text-sm shrink-0">
-        {completion.tt ? (
-          <span className="text-amber-400">{completion.tt} TT</span>
-        ) : (
-          <span className="text-gray-600">—</span>
-        )}
-      </div>
-      <CopyButton text={tsString} label="Copy TS" />
+      {showTS && (
+        <div className="mt-1.5 pl-8 text-xs leading-relaxed flex flex-wrap gap-x-1">
+          {completion.timeStudies.map((ts, i) => (
+            <span key={i} className={getTSColor(ts)}>
+              {ts}{i < completion.timeStudies.length - 1 ? ',' : ''}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -97,6 +125,7 @@ function ECRow({ ec, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const [showTS, setShowTS] = useState(false);
   const dimSplits = ec.completions.map(c => c.dimensionSplit);
   const paceSplits = ec.completions.map(c => c.paceSplit);
 
@@ -174,9 +203,15 @@ function ECRow({ ec, isExpanded, onToggle }: {
           </div>
           <div className="space-y-1">
             {ec.completions.map((completion) => (
-              <CompletionRow key={completion.level} completion={completion} />
+              <CompletionRow key={completion.level} completion={completion} showTS={showTS} />
             ))}
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowTS(!showTS); }}
+            className="mt-3 w-full text-xs text-gray-500 hover:text-gray-400 transition-colors"
+          >
+            {showTS ? 'Hide Time Studies' : 'Show Time Studies'}
+          </button>
         </div>
       )}
     </div>
